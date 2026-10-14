@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>RFID Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin:0;
+    font-family:'Segoe UI';
+    background:linear-gradient(135deg,#020617,#0f172a);
+    color:white;
+}
+
+/* HEADER */
+header {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:20px 60px;
+}
+
+.left {
+    display:flex;
+    align-items:center;
+    gap:15px;
+}
+
+.left img { width:50px; }
+
+.button-group {
+    display:flex;
+    gap:12px;
+}
+
+button {
+    padding:10px 18px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:500;
+    transition:0.3s;
+}
+
+.project { background:#ef4444; }
+.refresh { background:#3b82f6; }
+.logout { background:#f59e0b; }
+
+button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 0 15px rgba(255,255,255,0.3);
+}
+
+/* STATS */
+.stats {
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    margin:30px;
+}
+
+.card {
+    background:rgba(255,255,255,0.05);
+    backdrop-filter:blur(12px);
+    padding:25px;
+    border-radius:15px;
+    width:160px;
+    text-align:center;
+    transition:0.3s;
+}
+
+.card.glow {
+    box-shadow:0 0 25px #3b82f6;
+}
+
+/* TABLE */
+table {
+    width:90%;
+    margin:auto;
+    border-collapse:collapse;
+}
+th,td {
+    padding:12px;
+    border-bottom:1px solid #334155;
+}
+
+/* CHART */
+.chart-box {
+    width:500px;
+    margin:auto;
+    background:rgba(255,255,255,0.05);
+    padding:20px;
+    border-radius:15px;
+}
+
+footer {
+    position:fixed;
+    bottom:10px;
+    right:15px;
+    font-size:12px;
+    color:#64748b;
+}
+</style>
+
+<script>
+let chart;
+let selectedStudent="";
+let prevStats={total:0,present:0,exited:0};
+let prevCount=0;
+
+function animateValue(id,start,end){
+    document.getElementById(id).innerText=end;
+}
+
+async function fetchData(){
+    let res=await fetch('/data');
+    let json=await res.json();
+
+    let tbody=document.querySelector("tbody");
+    tbody.replaceChildren();
+
+    json.data.forEach(r=>{
+        const tr = document.createElement("tr");
+        [r.Timestamp, r.Name, r.RegNo, r.UID, r.Status, r.Duration].forEach(value => {
+            const td = document.createElement("td");
+            td.textContent = value ?? "";
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+
+    animateValue("total",prevStats.total,json.total);
+    animateValue("present",prevStats.present,json.present);
+    animateValue("exited",prevStats.exited,json.exited);
+    prevStats=json;
+
+    /* 🔥 NEW SCAN DETECT */
+    if(json.total > prevCount){
+        triggerScanEffect();
+    }
+    prevCount=json.total;
+
+    updateChart(json);
+}
+
+/* 🔥 GLOW + SOUND */
+function triggerScanEffect(){
+    document.querySelectorAll(".card").forEach(c=>{
+        c.classList.add("glow");
+        setTimeout(()=>c.classList.remove("glow"),500);
+    });
+
+    document.getElementById("beep").play();
+}
+
+/* CHART */
+function updateChart(json){
+    if(chart) chart.destroy();
+
+    chart=new Chart(document.getElementById('chart'),{
+        type:'doughnut',
+        data:{
+            labels:['Present','Exited'],
+            datasets:[{
+                data:[json.present,json.exited],
+                backgroundColor:['#3b82f6','#ef4444']
+            }]
+        }
+    });
+}
+
+setInterval(fetchData,3000);
+</script>
+
+</head>
+
+<body>
+
+<header>
+<div class="left">
+<img src="{{ url_for('static', filename='vit_logo.jpg') }}">
+<div>
+<h3>Embedded C Project</h3>
+<small>Smart Attendance System</small>
+</div>
+</div>
+
+<div class="button-group">
+<form action="/clear" method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="project" type="submit" onclick="return confirm('Clear all records in the configured attendance CSV? This cannot be undone.');">CLEAR DATA</button></form>
+<form action="/" method="GET"><button class="refresh" type="submit">REFRESH</button></form>
+<form action="/logout" method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="logout" type="submit">LOGOUT</button></form>
+</div>
+</header>
+
+<h1 style="text-align:center;">RFID Attendance Dashboard</h1>
+
+<div class="stats">
+<div class="card">Total<br><b id="total">0</b></div>
+<div class="card">Present<br><b id="present">0</b></div>
+<div class="card">Exited<br><b id="exited">0</b></div>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Time</th><th>Name</th><th>Reg</th><th>UID</th><th>Status</th><th>Duration</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<hr style="margin:40px;">
+
+<h2 style="text-align:center;">📊 Attendance Analytics</h2>
+
+<div class="chart-box">
+<canvas id="chart"></canvas>
+</div>
+
+<footer>
+Developed by Anany Agrawal © 2026
+</footer>
+
+<!-- 🔊 SOUND -->
+<audio id="beep" src="{{ url_for('static', filename='beep.mp3') }}"></audio>
+
+</body>
+</html>

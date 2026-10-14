@@ -1,0 +1,31 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+credential.json
+credentials/
+*service-account*.json
+*.pem
+*.key
+
+# Attendance records and backups may contain personal information
+attendance.csv
+backups/*
+!backups/.gitkeep
+*.csv
+!data/sample_attendance.csv
+
+# Python / virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

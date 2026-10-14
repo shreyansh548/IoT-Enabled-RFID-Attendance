@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+background:#020617;
+color:white;
+font-family:Segoe UI;
+}
+.box {
+background:#1e293b;
+padding:30px;
+border-radius:10px;
+}
+input {
+display:block;
+margin:10px 0;
+padding:10px;
+width:220px;
+border:none;
+border-radius:6px;
+}
+button {
+padding:10px;
+width:100%;
+background:#3b82f6;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="box">
+<h2>Login</h2>
+{% if error %}<p role="alert" style="color:#fca5a5;max-width:260px">{{ error }}</p>{% endif %}
+<form method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<input name="username" required placeholder="Username">
+<input name="password" type="password" required placeholder="Password">
+<button>Login</button>
+</form>
+</div>
+
+</body>
+</html>
